@@ -5,28 +5,33 @@ def request(url, redirect):
     splited = url.split('://')
     if splited[0] == 'https':
         print('[Error] https protocol is not supported.')
-        return 1;
+        sys.exit(1)
     if redirect > 9:
         print('[Error] Too many redirections.')
-        return 1;
+        sys.exit(1)
 
     else:
         addr = splited[1].split('/')
-        host = addr[0]
+        hostAndPort = addr[0].split(':')
+        host = hostAndPort[0]
+        port = '80'
+
+        if len(hostAndPort) > 1:
+            port = hostAndPort[1];
+
         path = '/' + '/'.join(addr[1:])
 
         se = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        se.connect((host, 80))
+        se.connect((host, int(port)))
 
         try:
-            se.send(str.encode('GET %s HTTP/1.1\r\n' % path))
-            se.send(str.encode('Host: %s:80\r\n' % host))
-            se.send(b'Connection: keep-alive\r\n')
+            se.send(str.encode('GET %s HTTP/1.0\r\n' % path))
+            se.send(str.encode('Host: %s:%s\r\n' % (host, port)))
             se.send(b'Cache-Control: max-age=0\r\n')
             se.send(b'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
             se.send(b'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36\r\n')
-            se.send(b'Accept-Encoding: gzip, deflate, sdch\r\n')
-            se.send(b'Accept-Language: zh-CN,zh;q=0.8\r\n\r\n')
+            #se.send(b'Accept-Encoding: gzip, deflate, sdch\r\n')
+            se.send(b'Accept-Language: en-US\r\n\r\n')
         except Exception as e:
             print(e)
 
@@ -38,10 +43,8 @@ def request(url, redirect):
             else:
                 break
 
-        for i in range(len(buffer)):
-            buffer[i] = bytes.decode(buffer[i]);
-
-        buffer = ''.join(buffer)
+        buffer = b''.join(buffer)
+        buffer = bytes.decode(buffer)
         se.close()
 
         header, html = buffer.split('\r\n\r\n', 1)
@@ -49,7 +52,7 @@ def request(url, redirect):
         
         if buffer[0].find('302') == -1 and buffer[0].find('301') == -1:
             print(html)
-            return 0
+            sys.exit(0)
         else:
             for entry in buffer:
                 if entry.find("Location") >= 0:
@@ -57,6 +60,6 @@ def request(url, redirect):
                     request(entry[1], redirect+1)
 
 if __name__ == "__main__":
-    request('http://insecure.stevetarzia.com', 0)
+    request(sys.argv[1], 0)
     
     
