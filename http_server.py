@@ -1,96 +1,40 @@
-#!/usr/bin/env python
-# coding=utf-8
+import socket
+import os
+import re
+import atexit
+def http_server(port):
 
-import socket
-import re
+    # Configure socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 8082))
+    sock.listen(100)
 
-HOST = ''
-PORT = 8000
+    # infinite loop
+    while True:
+        # maximum number of requests waiting
+        try:
+            conn, addr = sock.accept()
+            request = bytes.decode(conn.recv(1024))
+            src = request.split(' ')[1]
 
-# Read index.html, put into HTTP response data
-index_content = '''
-HTTP/1.x 200 ok
-Content-Type: text/html
+            print ('Connect by: ', addr)
+            print ('Request is:\n', request)
+            
+            content = ''
+            if os.path.exists(src[1:]):
+                file = open(src[1:], 'r')
+                content += "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+                content += file.read()
+                file.close()
+            else:
+                content += "HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n404 Not Found"
 
-'''
+            conn.sendall(str.encode(content))
+            conn.close()
 
-file = open('index.html', 'r')
-index_content += file.read()
-file.close()
+        except Exception as e:
+            print(e)
 
-# Read reg.html, put into HTTP response data
-reg_content = '''
-HTTP/1.x 200 ok
-Content-Type: text/html
-
-'''
-
-file = open('reg.html', 'r')
-reg_content += file.read()
-file.close()
-
-# Read picture, put into HTTP response data
-file = open('T-mac.jpg', 'rb')
-pic_content = '''
-HTTP/1.x 200 ok
-Content-Type: image/jpg
-
-'''
-pic_content += file.read()
-file.close()
-
-
-# Configure socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.bind((HOST, PORT))
-sock.listen(100)
-
-# infinite loop
-while True:
-            # maximum number of requests waiting
-        conn, addr = sock.accept()
-        request = conn.recv(1024)
-        method = request.split(' ')[0]
-        src   = request.split(' ')[1]
-
-        print 'Connect by: ', addr
-         print 'Request is:\n', request
-
-        # deal wiht GET method
-         if method == 'GET':
-                 if src == '/index.html':
-                        content = index_content
-                 elif src == '/T-mac.jpg':
-                        content = pic_content
-                 elif src == '/reg.html':
-                        content = reg_content
-                elif re.match('^/\?.*$', src):
-                            #  main content of the request
-                        entry = src.split('?')[1]
-                        content = 'HTTP/1.x 200 ok\r\nContent-Type: text/html\r\n\r\n'
-                        content += entry
-                        content += '<br /><font color="green" size="7">register successs!</p>'
-                 else:
-                         continue
-
-    
-        # deal with POST method
-         elif method == 'POST':
-                form = request.split('\r\n')
-                entry = form[-1]        #  main content of the request
-                content = 'HTTP/1.x 200 ok\r\nContent-Type: text/html\r\n\r\n'
-                content += entry
-                content += '<br /><font color="green" size="7">register successs!</p>'
-    
-        ######
-        # More operations, such as put the form into database
-        # ...
-        ######
-    
-         else:
-                 continue
-
-        conn.sendall(content)
-    
-        # close connection
-        conn.close()
+if __name__ == "__main__":
+    http_server(80)
+    

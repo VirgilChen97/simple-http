@@ -30,18 +30,22 @@ def request(url, redirect):
             se.send(b'Cache-Control: max-age=0\r\n')
             se.send(b'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
             se.send(b'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36\r\n')
-            #se.send(b'Accept-Encoding: gzip, deflate, sdch\r\n')
             se.send(b'Accept-Language: en-US\r\n\r\n')
         except Exception as e:
             print(e)
 
-        buffer = []
+        buffer = b''
+        header = b''
         while True:
             d = se.recv(1024)
-            if d:
-                buffer.append(d)
-            else:
-                break
+            buffer += d;
+            if(buffer.find(b'\r\n\r\n') >= 0){
+                content = buffer.split(b'\r\n\r\n', 1)
+                headerLines = content[0].split(b'\r\n')
+                for i in len(headerLines):
+                    if(headerLines.find(''))
+
+            }
 
         buffer = b''.join(buffer)
         buffer = bytes.decode(buffer)
