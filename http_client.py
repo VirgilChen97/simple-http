@@ -1,10 +1,11 @@
 import socket
 import sys
+import re
 
 def request(url, redirect):
     splited = url.split('://')
-    if splited[0] == 'https':
-        print('[Error] https protocol is not supported.')
+    if splited[0] != 'http':
+        print('[Error] Protocol other than http is not supported.')
         sys.exit(1)
     if redirect > 9:
         print('[Error] Too many redirections.')
@@ -35,19 +36,34 @@ def request(url, redirect):
             print(e)
 
         buffer = b''
-        header = b''
+        length = 0
         while True:
-            d = se.recv(1024)
+            d = se.recv(128)
             buffer += d;
-            if(buffer.find(b'\r\n\r\n') >= 0){
-                content = buffer.split(b'\r\n\r\n', 1)
-                headerLines = content[0].split(b'\r\n')
-                for i in len(headerLines):
-                    if(headerLines.find(''))
+            if buffer.find(b'\r\n\r\n') >= 0:
+                break
 
-            }
+        content = buffer.split(b'\r\n\r\n', 1)
+        headerLines = content[0].split(b'\r\n')
+        hasLength = False
+        for i in range(len(headerLines)):
+            if headerLines[i].find(b'Content-Length') >= 0:
+                hasLength = True
+                length = int(re.findall(r"\d+\.?\d*",bytes.decode(headerLines[i]))[0])
+                if len(content) == 1:
+                    buffer = buffer + se.recv(length)
+                else:
+                    buffer = buffer + se.recv(length-len(content[1]))
+                break
 
-        buffer = b''.join(buffer)
+        if not hasLength:
+            while True:
+                d = se.recv(128)
+                if not d:
+                    break
+                else:
+                    buffer += d;
+
         buffer = bytes.decode(buffer)
         se.close()
 

@@ -1,4 +1,5 @@
 import socket
+import sys
 import os
 
 def http_server(port):
@@ -8,7 +9,6 @@ def http_server(port):
     sock.bind(('', 8081))
     sock.listen(100)
 
-    # infinite loop
     while True:
         # maximum number of requests waiting
         try:
@@ -21,15 +21,16 @@ def http_server(port):
             
             content = ''
 
-            if not src.endswith('.htm') and not src.endswith('.html'):
-                content += "HTTP/1.0 403 Forbidden\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
-            elif os.path.exists(src):
-                file = open(src, 'r')
-                content += "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
-                content += file.read()
-                file.close()
+            if os.path.exists(src):
+                if not src.endswith('.htm') and not src.endswith('.html'):
+                    content += "HTTP/1.0 403 Forbidden\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+                else:
+                    file = open(src, 'r')
+                    content += "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+                    content += file.read()
+                    file.close()
             else:
-                content += "HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n404 Not Found"
+                content += "HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n404 Not Found"
 
             conn.sendall(str.encode(content))
             conn.close()
