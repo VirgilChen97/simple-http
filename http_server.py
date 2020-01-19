@@ -5,9 +5,14 @@ import os
 def http_server(port):
 
     # Configure socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 8081))
-    sock.listen(100)
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(('', int(port)))
+        sock.listen(100)
+    except:
+        print('[Error] Failed to bind port ' + port)
+    else:
+        print('[Message] Listening on port ' + port)
 
     while True:
         # maximum number of requests waiting
@@ -39,5 +44,5 @@ def http_server(port):
             print(e)
 
 if __name__ == "__main__":
-    http_server(80)
+    http_server(sys.argv[1])
     

@@ -1,3 +1,4 @@
+import traceback
 import socket
 import sys
 import re
@@ -33,8 +34,9 @@ def request(url, redirect):
             se.send(b'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36\r\n')
             se.send(b'Accept-Language: en-US\r\n\r\n')
         except Exception as e:
-            print(e)
-
+            print("[Error] ", e)
+            print(traceback.format_exc())
+            
         buffer = b''
         length = 0
         while True:
@@ -46,7 +48,13 @@ def request(url, redirect):
         content = buffer.split(b'\r\n\r\n', 1)
         headerLines = content[0].split(b'\r\n')
         hasLength = False
+        
         for i in range(len(headerLines)):
+            if headerLines[i].find(b'Content-Type') >= 0:
+                if(headerLines[i].find(b'text/html') < 0):
+                    print("[Error] Receiving non HTML file")
+                    sys.exit(1)
+
             if headerLines[i].find(b'Content-Length') >= 0:
                 hasLength = True
                 length = int(re.findall(r"\d+\.?\d*",bytes.decode(headerLines[i]))[0])
@@ -54,11 +62,10 @@ def request(url, redirect):
                     buffer = buffer + se.recv(length)
                 else:
                     buffer = buffer + se.recv(length-len(content[1]))
-                break
 
         if not hasLength:
             while True:
-                d = se.recv(128)
+                d = se.recv(1024)
                 if not d:
                     break
                 else:
@@ -69,15 +76,21 @@ def request(url, redirect):
 
         header, html = buffer.split('\r\n\r\n', 1)
         buffer = buffer.split('\r\n')
+        statusCode = int(buffer[0].split(' ')[1])
         
-        if buffer[0].find('302') == -1 and buffer[0].find('301') == -1:
-            print(html)
-            sys.exit(0)
-        else:
+        if statusCode == 301 or statusCode == 302:
             for entry in buffer:
                 if entry.find("Location") >= 0:
                     entry = entry.split(': ')
+                    print('[Message] Redirecting to '+entry[1])
                     request(entry[1], redirect+1)
+        elif statusCode > 400:
+            print(html)
+            sys.exit(1)
+        else:
+            print(html)
+            sys.exit(0)
+            
 
 if __name__ == "__main__":
     request(sys.argv[1], 0)
