@@ -21,8 +21,8 @@ def http_server(port):
             request = bytes.decode(conn.recv(1024))
             src = request.split(' ')[1][1:]
 
-            print ('Connect by: ', addr)
-            print ('Request is:\n', request)
+            print ('[Message] Connect by: ' + str(addr))
+            print ('[Message] Request is:\n' + str(request))
             
             content = ''
 
