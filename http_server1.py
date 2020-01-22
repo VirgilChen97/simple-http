@@ -11,6 +11,7 @@ def http_server(port):
         sock.listen(100)
     except:
         print('[Error] Failed to bind port ' + port)
+        sys.exit(1)
     else:
         print('[Message] Listening on port ' + port)
 
@@ -19,13 +20,10 @@ def http_server(port):
         try:
             conn, addr = sock.accept()
             request = bytes.decode(conn.recv(1024))
-            src = request.split(' ')[1][1:]
-
-            print ('Connect by: ', addr)
-            print ('Request is:\n', request)
-            
+            src = request.split(' ')
+            src = src[1][1:]
             content = ''
-
+            print(src)
             if os.path.exists(src):
                 if not src.endswith('.htm') and not src.endswith('.html'):
                     content += "HTTP/1.0 403 Forbidden\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"

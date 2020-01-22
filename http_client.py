@@ -6,10 +6,10 @@ import re
 def request(url, redirect):
     splited = url.split('://')
     if splited[0] != 'http':
-        print('[Error] Protocol other than http is not supported.')
+        print('[Error] Protocol other than http is not supported.',file=sys.stderr)
         sys.exit(1)
     if redirect > 9:
-        print('[Error] Too many redirections.')
+        print('[Error] Too many redirections.', file=sys.stderr)
         sys.exit(1)
 
     else:
@@ -52,7 +52,7 @@ def request(url, redirect):
         for i in range(len(headerLines)):
             if headerLines[i].find(b'Content-Type') >= 0:
                 if(headerLines[i].find(b'text/html') < 0):
-                    print("[Error] Receiving non HTML file")
+                    print("[Error] Receiving non HTML file", file=sys.stderr)
                     sys.exit(1)
 
             if headerLines[i].find(b'Content-Length') >= 0:
@@ -82,7 +82,7 @@ def request(url, redirect):
             for entry in buffer:
                 if entry.find("Location") >= 0:
                     entry = entry.split(': ')
-                    print('[Message] Redirecting to '+entry[1])
+                    print('Redirecting to '+entry[1],file=sys.stderr)
                     request(entry[1], redirect+1)
         elif statusCode > 400:
             print(html)
