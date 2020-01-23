@@ -57,10 +57,8 @@ def request(url, redirect):
             if headerLines[i].find(b'Content-Length') >= 0:
                 hasLength = True
                 length = int(re.findall(r"\d+\.?\d*",bytes.decode(headerLines[i]))[0])
-                if len(content) == 1:
-                    buffer = buffer + se.recv(length)
-                else:
-                    buffer = buffer + se.recv(length-len(content[1]))
+                while len(buffer)<length+len(content[0]):
+                    buffer = buffer + se.recv(1024)
 
         if not hasLength:
             while True:

@@ -22,9 +22,6 @@ def http_server(port):
             request = bytes.decode(conn.recv(1024))
 
             src = request.split(' ')[1][1:]
-
-            print('[Message] Connect by: ' + str(addr))
-            print('[Message] Request is:\n' + str(request))
             content = ''
             #product?a=12&b = 60 & another = 0.5&
             if src.startswith('product'):
