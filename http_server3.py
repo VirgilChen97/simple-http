@@ -44,20 +44,20 @@ def http_server(port):
                         # ValueError during convert, valid input
                         no_error = False
                         break
-                if no_error:
+                if no_error and len(num_list) != 0:
                     form = {
                             "operation": "product",
                             "operands": num_list,
                             "result": ans
                         }
                     res = json.dumps(form, indent=4)#, separators=(",",":"))
-                    content += "HTTP/1.0 200 OK\r\nContent-Type:application/json;charset=UTF-8\r\n\r\n"
+                    content += "HTTP/1.0 200 OK\r\nContent-Type:application/json;charset=UTF-8\r\nContent-length:{}\r\n\r\n".format(len(res))
                     content += res
                 else:
                     content += "HTTP/1.0 400 Bad Request\r\nContent-Type:application/json;charset=UTF-8\r\n\r\n"
-                    content += ('Invalid input')
+                    #content += ('400 Bad Request')
             else:
-                content += "HTTP/1.0 404 Not Found\r\n\r\n404 Not Found"
+                content += "HTTP/1.0 404 Not Found\r\n\r\n"
 
             conn.sendall(str.encode(content))
             conn.close()
