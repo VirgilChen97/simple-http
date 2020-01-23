@@ -29,7 +29,7 @@ def http_server(port):
                     content += "HTTP/1.0 403 Forbidden\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
                 else:
                     file = open(src, 'r')
-                    body = file.read();
+                    body = file.read()
                     content += "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: {}\r\n\r\n".format(len(body))
                     content += body
                     file.close()
