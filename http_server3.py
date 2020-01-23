@@ -25,38 +25,37 @@ def http_server(port):
 
             print('[Message] Connect by: ' + str(addr))
             print('[Message] Request is:\n' + str(request))
-            print('[Message] is:\n' + str(src))
             content = ''
             #product?a=12&b = 60 & another = 0.5&
-            if src.startswith('/product'):
+            if src.startswith('product'):
                 src = src + '&'
                 start_e = 0
                 start_a = 0
                 ans = 1
+                num_list = []
                 no_error = True
                 while src.find('=', start_e) >= 0:  # As long as '=' exists in src
                     start_e = src.find('=', start_e) + 1
                     start_a = src.find('&', start_a) + 1
                     try:
                         ans = ans * float(src[start_e:start_a - 1])
-                        form = {
-                            "operation": "product",
-                            "operands":float(src[start_e:start_a - 1]),
-                            "result": ans
-                        }
-                        res = json.dumps(form, indent=4, separators=",")
+                        num_list.append(float(src[start_e:start_a - 1]))
                     except ValueError:
                         # ValueError during convert, valid input
                         no_error = False
                         break
                 if no_error:
-                    content += res
+                    form = {
+                            "operation": "product",
+                            "operands": num_list,
+                            "result": ans
+                        }
+                    res = json.dumps(form, indent=4)#, separators=(",",":"))
                     content += "HTTP/1.0 200 OK\r\nContent-Type:application/json;charset=UTF-8\r\n\r\n"
+                    content += res
                 else:
+                    content += "HTTP/1.0 400 Bad Request\r\nContent-Type:application/json;charset=UTF-8\r\n\r\n"
                     content += ('Invalid input')
-                    content += "HTTP/1.0 400 Fail\r\nContent-Type: son; charset=UTF-8\r\n\r\n"
-                    #content += file.read()
-                    #file.close()
             else:
                 content += "HTTP/1.0 404 Not Found\r\n\r\n404 Not Found"
 
