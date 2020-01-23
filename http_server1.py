@@ -20,8 +20,8 @@ def http_server(port):
         try:
             conn, addr = sock.accept()
             request = bytes.decode(conn.recv(1024))
-            src = request.split(' ')
-            src = src[1][1:]
+            src = request.split(' ')[1][1:]
+
             content = ''
             print(src)
             if os.path.exists(src):
@@ -40,6 +40,7 @@ def http_server(port):
 
         except Exception as e:
             print(e)
+            conn.close()
 
 if __name__ == "__main__":
     http_server(sys.argv[1])

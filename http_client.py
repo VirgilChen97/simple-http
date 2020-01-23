@@ -4,8 +4,8 @@ import sys
 import re
 
 def request(url, redirect):
-    splited = url.split('://')
-    if splited[0] != 'http':
+    split = url.split('://')
+    if split[0] != 'http':
         print('[Error] Protocol other than http is not supported.',file=sys.stderr)
         sys.exit(1)
     if redirect > 9:
@@ -13,13 +13,13 @@ def request(url, redirect):
         sys.exit(1)
 
     else:
-        addr = splited[1].split('/')
+        addr = split[1].split('/')
         hostAndPort = addr[0].split(':')
         host = hostAndPort[0]
         port = '80'
 
         if len(hostAndPort) > 1:
-            port = hostAndPort[1];
+            port = hostAndPort[1]
 
         path = '/' + '/'.join(addr[1:])
 
@@ -27,21 +27,20 @@ def request(url, redirect):
         se.connect((host, int(port)))
 
         try:
-            se.send(str.encode('GET %s HTTP/1.0\r\n' % path))
-            se.send(str.encode('Host: %s:%s\r\n' % (host, port)))
+            se.send(('GET %s HTTP/1.0\r\n' % path).encode('ascii'))
+            se.send(('Host: %s:%s\r\n' % (host, port)).encode('ascii'))
             se.send(b'Cache-Control: max-age=0\r\n')
             se.send(b'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n')
             se.send(b'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36\r\n')
             se.send(b'Accept-Language: en-US\r\n\r\n')
         except Exception as e:
-            print("[Error] ", e)
-            print(traceback.format_exc())
+            print("[Error] ", e, file=sys.stderr)
             
         buffer = b''
         length = 0
         while True:
             d = se.recv(128)
-            buffer += d;
+            buffer += d
             if buffer.find(b'\r\n\r\n') >= 0:
                 break
 
@@ -69,7 +68,7 @@ def request(url, redirect):
                 if not d:
                     break
                 else:
-                    buffer += d;
+                    buffer += d
 
         buffer = bytes.decode(buffer)
         se.close()

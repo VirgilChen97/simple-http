@@ -2,60 +2,93 @@ import socket
 import select
 import sys
 import os
+import queue
  
  
 def http_server(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(("", port))
+    sock.bind(("", int(port)))
     sock.listen(128)
     sock.setblocking(False)
-    socket_list = list()
 
-    while True:
-        try:
-            new_socket, new_addr = sock.accept()
-        except Exception as e:
-            print("No new client now")  # for test
-        else:
-            new_socket.setblocking(False)   
-            socket_list.append(new_socket)
+    inputs = [sock]
+    outputs = []
+    message_queues = {}
 
-        rs,ws,es=select.select(socket_list,[],[])
+    while inputs:
 
-        for client_socket in rs:
-            try:
-                request = client_socket.recv(1024).decode('utf-8')
-            except Exception as ret:
-                print('1')  # for test
+        print('[Message] Waiting for new client')
+        re, we, ex = select.select(inputs, outputs, inputs)
+        print(re, we)
+
+        for s in re:
+            if s is sock:
+                new_socket, new_addr = sock.accept()
+                print('[Message] New connection from' + str(new_addr))
+                new_socket.setblocking(False)   
+                inputs.append(new_socket)
+                message_queues[new_socket] = queue.Queue()
             else:
-                if request:
-                    response = process(request)
-                    client_socket.sendall(str.encode(response))
-                    client_socket.close()
-                    socket_list.remove(client_socket)  
+                data = s.recv(1024)
+                if data:
+                    message_queues[s].put(data)
+                    if s not in outputs:
+                        outputs.append(s)
+                else:
+                    print('[Message] ' + str(s.getpeername())+' Connection closing')
+                    if s in outputs:
+                        outputs.remove(s)
+                    inputs.remove(s)
+                    s.close()
+                    del message_queues[s]
 
-        print(socket_list)
+        for s in we:
+            try:
+                request = message_queues[s].get_nowait()
+                request = bytes.decode(request)
+            except queue.Empty:
+                # No messages waiting so stop checking
+                # for writability.
+                print('[Error] ' + str(s.getpeername())+' has no data in request or invalid encoding')
+                outputs.remove(s)
+            else:
+                print('[Message] Sending response to '+ str(s.getpeername()))
+                s.send(process(request).encode('ascii'))
+                outputs.remove(s)
+                inputs.remove(s)
+                print('[Message] ' + str(s.getpeername())+' Connection closing')
+                s.close()
+        
+        for s in ex:
+            print('[Error] exception condition on', str(s.getpeername()))
+            inputs.remove(s)
+            if s in outputs:
+                outputs.remove(s)
+            s.close()
+            del message_queues[s]
  
  
 def process(request):
     if not request:
         return
-
-    src = request.split(' ')[1][1:]
     content = ''
+    try:
+        src = request.split(' ')[1][1:]
 
-    if os.path.exists(src):
-        if not src.endswith('.htm') and not src.endswith('.html'):
-            content += "HTTP/1.0 403 Forbidden\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+        if os.path.exists(src):
+            if not src.endswith('.htm') and not src.endswith('.html'):
+                content += "HTTP/1.0 403 Forbidden\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+            else:
+                file = open(src, 'r')
+                content += "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
+                content += file.read()
+                file.close()
         else:
-            file = open(src, 'r')
-            content += "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n"
-            content += file.read()
-            file.close()
-    else:
-        content += "HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n404 Not Found"
+            content += "HTTP/1.0 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n404 Not Found"
+    except:
+        content += "HTTP/1.0 400 Bad Request\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n400 Bad Request"
 
-    return content;
+    return content
 
 if __name__ == "__main__":
-    http_server(8081)
+    http_server(sys.argv[1])
